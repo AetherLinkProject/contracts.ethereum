@@ -1,12 +1,18 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
-
+// SPDX-License-Identifier: MIT
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "./Proxy.sol";
 import "./interfaces/RampInterface.sol";
 import "./interfaces/RouterInterface.sol";
-// import "hardhat/console.sol";
 
-contract Ramp is IRamp {
-    address public immutable owner; // Contract owner
+pragma solidity 0.8.9;
+
+contract RampImplementation is ProxyStorage {
+    bool private initialized;
     uint256 public threshold; // Min signatures required for consensus
     address[] private oracleNodes;
     mapping(address => bool) private isOracleNode;
@@ -20,46 +26,6 @@ contract Ramp is IRamp {
         address receiver;
     }
 
-    constructor(address[] memory initialNodes) {
-        owner = msg.sender;
-        _updateOracleNodes(initialNodes); // Initialize the oracle node list
-    }
-
-    function updateOracleNodes(
-        address[] calldata newOracleNodes
-    ) external onlyOwner {
-        // console.log("Updating oracle nodes..."); // Log message
-        _updateOracleNodes(newOracleNodes);
-    }
-
-    /// @notice Retrieves the current oracle nodes
-    function getOracleNodes() external view returns (address[] memory) {
-        return oracleNodes;
-    }
-
-    // --- Events ---
-    event RequestSent(
-        bytes32 indexed messageId,
-        address indexed sender,
-        string receiver,
-        uint256 targetChainId,
-        bytes data,
-        TokenAmount tokenAmount
-    );
-    event ReportTransmitted(
-        bytes32 indexed requestId,
-        address indexed targetContract,
-        bytes report
-    );
-    event OracleNodesUpdated(address[] newOracleNodes, uint256 newThreshold);
-
-    // --- Modifiers ---
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Caller is not the owner");
-        // console.log("Owner check passed:", msg.sender); // Debug owner check
-        _;
-    }
-
     modifier onlyOracleNode() {
         require(
             isOracleNode[msg.sender],
@@ -69,21 +35,51 @@ contract Ramp is IRamp {
         _;
     }
 
-    modifier validThreshold(uint256 _threshold) {
-        require(
-            _threshold > 0 && _threshold <= oracleNodes.length,
-            "Invalid threshold"
-        );
-        // console.log("Threshold is valid:", _threshold); // Debug threshold
-        _;
+    event RequestSent(
+        bytes32 indexed messageId,
+        address indexed sender,
+        string receiver,
+        uint256 targetChainId,
+        bytes data,
+        bytes tokenAmount
+    );
+
+    event ForwardMessageCalled(
+        IRamp.TokenAmount tokenAmount,
+        string message,
+        uint256 sourceChainId,
+        string sender,
+        address receiver
+    );
+
+    function initialize(address[] memory initialNodes) external onlyOwner {
+        require(!initialized, "Already initialized");
+        initialized = true;
+
+        _updateOracleNodes(initialNodes);
+    }
+
+    function getOracleNodes() external view returns (address[] memory) {
+        return oracleNodes;
+    }
+
+    function getInitialized() external view returns (bool) {
+        return initialized;
+    }
+
+    function updateOracleNodes(
+        address[] calldata newOracleNodes
+    ) external onlyOwner {
+        // console.log("Updating oracle nodes..."); // Log message
+        _updateOracleNodes(newOracleNodes);
     }
 
     function sendRequest(
         uint256 targetChainId,
         string calldata receiver,
         bytes calldata message,
-        TokenAmount calldata tokenAmount
-    ) external override returns (bytes32 messageId) {
+        IRamp.TokenAmount calldata tokenAmount
+    ) external returns (bytes32 messageId) {
         require(tokenAmount.amount > 0, "Invalid token amount");
         // console.log("sendRequest called with TokenAmount:", tokenAmount.amount); // Debug token amount
 
@@ -105,14 +101,14 @@ contract Ramp is IRamp {
             receiver,
             targetChainId,
             message,
-            tokenAmount
+            abi.encode(tokenAmount)
         );
     }
 
     function transmit(
         ReportContext calldata reportContext,
         string calldata message,
-        TokenAmount calldata tokenAmount,
+        IRamp.TokenAmount calldata tokenAmount,
         bytes32[] memory rs,
         bytes32[] memory ss,
         bytes32 rawVs

@@ -1,3 +1,4 @@
+pragma solidity ^0.8.9;
 import "./RampInterface.sol";
 
 interface IRouter {
