@@ -96,7 +96,8 @@ describe("Ramp", function () {
             const reportContext = getValidReportContext();
             // const solidityRequestId = await ramp.debugRequestId(reportContext.requestId);
             // console.log("Solidity Request ID:", solidityRequestId);
-            const message = "Valid Message";
+            // const message = ethers.utils.toUtf8Bytes("Valid Message"); 
+            const message = ethers.utils.toUtf8Bytes("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALll8EwFHj5gJ9VbWOlLHD3cjEDIO2oysxQ/nDXTWaeOsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABfXhAAAAAAAAAAAAAAAAAKImPVwU+ccRqLPEqi/VIu/bXV5EobLkuYCnCwVAlnr4VL7s8XaETaVcNmAfeEnGFObs+1CWXwTAUePmAn1VtY6UscPdyMQMg7ajKzFD+cNdNZp46w==");
             const tokenAmount = getValidTokenAmount();
             // Generate reportHash
             const reportHash = generateReportHash(reportContext, message, tokenAmount);
@@ -133,9 +134,8 @@ describe("Ramp", function () {
 
         it("should fail if insufficient valid signatures provided", async function () {
             const { ramp, addr1, wallet1 } = await loadFixture(deployRampFixture);
-
             const reportContext = getValidReportContext();
-            const message = "Invalid Message";
+            const message = ethers.utils.toUtf8Bytes("Invalid Message");
             const tokenAmount = getValidTokenAmount();
             const reportHash = generateReportHash(reportContext, message, tokenAmount);
             const { rs, ss, rawVs } = generateSigns(reportHash, [wallet1.privateKey]);
@@ -150,7 +150,7 @@ describe("Ramp", function () {
     // --- Helper Functions ---
     function getValidReportContext() {
         return {
-            requestId: ethers.utils.id("ValidRequest"),
+            messageId: ethers.utils.id("ValidRequest"),
             sourceChainId: 1,
             targetChainId: 2,
             sender: "Alice",
@@ -174,12 +174,12 @@ describe("Ramp", function () {
             ethers.utils.defaultAbiCoder.encode(
                 [
                     "tuple(bytes32,uint256,uint256,string,address)", // ReportContext
-                    "string", // Message
+                    "bytes", // Message
                     "tuple(string,uint256,string,string,string,uint256)", // TokenAmount
                 ],
                 [
                     [
-                        reportContext.requestId,
+                        reportContext.messageId,
                         reportContext.sourceChainId,
                         reportContext.targetChainId,
                         reportContext.sender,

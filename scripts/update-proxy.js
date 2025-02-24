@@ -15,18 +15,6 @@ async function main() {
     const tx = await RampProxy.updateImplementation(rampImplementation.address);
     await tx.wait();
     console.log("Proxy implementation updated.");
-
-    // const updatedImplementation = await RampProxy.implementation();
-    // if (updatedImplementation === rampImplementation.address) {
-    //     console.log("Proxy successfully updated to new implementation:", updatedImplementation);
-    // } else {
-    //     console.error("Proxy update failed. Current implementation:", updatedImplementation);
-    // }
-
-    // console.log("Testing functionality of new implementation...");
-    // const rampWithNewLogic = await ethers.getContractAt("RampImplementation", rampProxyAddress);
-    // const oracleNodes = await rampWithNewLogic.getOracleNodes();
-    // console.log("Oracle nodes after upgrade:", oracleNodes);
 }
 
 main()

@@ -19,7 +19,7 @@ contract RampImplementation is ProxyStorage {
     uint256 public signatureThreshold;
 
     struct ReportContext {
-        bytes32 requestId;
+        bytes32 messageId;
         uint256 sourceChainId;
         uint256 targetChainId;
         string sender;
@@ -46,7 +46,7 @@ contract RampImplementation is ProxyStorage {
 
     event ForwardMessageCalled(
         IRamp.TokenAmount tokenAmount,
-        string message,
+        bytes message,
         uint256 sourceChainId,
         string sender,
         address receiver
@@ -107,7 +107,7 @@ contract RampImplementation is ProxyStorage {
 
     function transmit(
         ReportContext calldata reportContext,
-        string calldata message,
+        bytes calldata message,
         IRamp.TokenAmount calldata tokenAmount,
         bytes32[] memory rs,
         bytes32[] memory ss,

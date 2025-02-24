@@ -35,5 +35,5 @@ interface IRamp {
         string calldata receiver,
         bytes calldata data,
         TokenAmount calldata tokenAmount
-    ) external returns (bytes32 requestId);
+    ) external returns (bytes32 messageId);
 }

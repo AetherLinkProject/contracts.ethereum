@@ -12,7 +12,7 @@ contract MockRouter is IRouter {
 
     function forwardMessage(
         IRamp.TokenAmount calldata tokenAmount,
-        string calldata message,
+        bytes calldata message,
         uint256 sourceChainId,
         string calldata sender,
         address receiver
